@@ -39,7 +39,12 @@ class Context(BaseContext):
         self.messages_loader = DataLoader(load_fn=self._load_messages)
 
     async def _load_messages(self, contact_ids: list[int]) -> Sequence[list["Message"]]:
-        """One query for the messages of every contact in the batch."""
+        """One query for the messages of every contact in the batch.
+
+        (A synchronous database call inside async code blocks the event loop for its
+        duration. That's fine for in-memory SQLite in a demo; a production app would use
+        SQLAlchemy's asyncio support.)
+        """
         rows = self.session.scalars(
             select(MessageRow).where(MessageRow.contact_id.in_(contact_ids)).order_by(MessageRow.id)
         )
