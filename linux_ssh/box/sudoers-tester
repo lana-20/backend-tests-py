@@ -1,3 +1,7 @@
-# tester may send signals to processes owned by `app` (to test supervised restarts),
-# and run nothing else with elevated rights. No password prompt: there is no password.
+# What tester may run with other rights, and nothing else. No password prompt: there
+# is no password. Arguments are fixed where listed, so they can't be swapped.
+# - signal processes owned by `app`, to test supervised restarts
 tester ALL=(app) NOPASSWD: /usr/bin/kill
+# - dry-run the service's logrotate config (-d changes nothing). It must run as root,
+#   because the config's `su app adm` line switches users even in a dry run.
+tester ALL=(root) NOPASSWD: /usr/sbin/logrotate -d /etc/logrotate.d/demo

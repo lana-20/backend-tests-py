@@ -120,7 +120,9 @@ jobs:
         with: { node-version: '${{ env.NODE_VERSION }}' }
       # Bats from npm, pinned to an exact version. The JUnit file goes into
       # allure-results, which Allure reads alongside the pytest results.
-      - run: npx --yes bats@1.13.0 --report-formatter junit --output allure-results linux_ssh/bats
+      - run: |
+          mkdir -p allure-results
+          npx --yes bats@1.13.0 --report-formatter junit --output allure-results linux_ssh/bats
       - uses: actions/upload-artifact@v7
         if: always()
         with:

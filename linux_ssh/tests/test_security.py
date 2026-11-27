@@ -43,9 +43,12 @@ def test_tester_is_not_root_and_has_no_general_sudo(ssh: paramiko.SSHClient) -> 
     assert run(ssh, "id -un").stdout.strip() == "tester"
     # sudo -n: never prompt. Running anything as root must be refused...
     assert run(ssh, "sudo -n true", check=False).exit_code != 0
-    # ...the single grant is "kill, as the app user" (used by the restart test).
+    # ...the grants are "kill, as the app user" (for the restart test) and one exact
+    # logrotate dry-run command line (for the logrotate test).
     grants = run(ssh, "sudo -n -l").stdout
     assert "(app) NOPASSWD: /usr/bin/kill" in grants
+    assert "(root) NOPASSWD: /usr/sbin/logrotate -d /etc/logrotate.d/demo" in grants
+    assert run(ssh, "sudo -n /usr/sbin/logrotate /etc/logrotate.d/demo", check=False).exit_code != 0
 
 
 def test_config_file_ownership_and_mode(ssh: paramiko.SSHClient) -> None:

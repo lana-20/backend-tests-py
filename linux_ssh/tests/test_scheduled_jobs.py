@@ -25,9 +25,10 @@ def test_cron_file_has_safe_ownership(ssh: paramiko.SSHClient) -> None:
 
 
 def test_logrotate_config_is_valid(ssh: paramiko.SSHClient) -> None:
-    # -d: debug/dry run, changes nothing. -s: a scratch state file, since tester can't
-    # write logrotate's real one. A syntax error makes logrotate exit non-zero.
-    result = run(ssh, "/usr/sbin/logrotate -d -s /tmp/logrotate.state /etc/logrotate.d/demo")
+    # -d: debug/dry run, changes nothing. A syntax error makes logrotate exit non-zero.
+    # It runs via sudo because `su app adm` in the config needs root even in a dry run;
+    # sudoers allows exactly this command line and no other.
+    result = run(ssh, "sudo -n /usr/sbin/logrotate -d /etc/logrotate.d/demo")
     report = result.stdout + result.stderr
     assert "rotating pattern: /var/log/demo/*.log" in report
     assert "error:" not in report
