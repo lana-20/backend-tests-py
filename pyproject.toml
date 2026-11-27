@@ -62,8 +62,8 @@ python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy", "strawberry.ext.mypy_plugin"]
 exclude = ["\\.venv"]
-# allure-pytest has no type hints; calling it from typed code is fine.
-untyped_calls_exclude = ["allure", "allure_commons"]
+# allure-pytest and google-auth have no type hints; calling them from typed code is fine.
+untyped_calls_exclude = ["allure", "allure_commons", "google.auth"]
 
 [[tool.mypy.overrides]]
 # These packages ship without type hints.
