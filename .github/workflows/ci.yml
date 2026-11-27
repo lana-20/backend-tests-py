@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.4.0
         with: { version: '${{ env.UV_VERSION }}', enable-cache: true }
       - run: uv sync --locked
       - run: uv run ruff format --check .
@@ -40,7 +40,7 @@ jobs:
         engine: [postgres, mysql, mssql, sqlite]
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.4.0
         with: { version: '${{ env.UV_VERSION }}', enable-cache: true }
       - run: uv sync --locked
       # Pull outside the test run, so the pull time doesn't count against the
