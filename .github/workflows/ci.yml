@@ -68,6 +68,8 @@ jobs:
         include:
           - { id: graphql, name: GraphQL, path: graphql_api }
           - { id: mongodb, name: MongoDB, path: mongodb }
+          - { id: redis, name: Redis, path: redis_cache }
+          - { id: dynamodb, name: DynamoDB Local, path: document_stores/dynamodb }
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.4.0

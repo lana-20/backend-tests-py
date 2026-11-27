@@ -40,23 +40,23 @@ def mongo_client() -> Iterator[MongoClient[dict[str, Any]]]:
         .waiting_for(LogMessageWaitStrategy("Waiting for connections"))
     )
     with container:
-        client: MongoClient[dict[str, Any]] = MongoClient(
-            container.get_container_host_ip(),
-            int(container.get_exposed_port(27017)),
-            # Talk to this one node directly. The replica set's member address
-            # (localhost:27017 inside the container) isn't reachable from the host.
-            directConnection=True,
-            tz_aware=True,
-            serverSelectionTimeoutMS=5000,
-        )
-        client.admin.command("replSetInitiate", {"_id": "rs0", "members": [{"_id": 0, "host": "localhost:27017"}]})
-        # Electing itself primary takes a moment; that wait is inherent, so poll for it.
-        wait_until(
-            lambda: client.admin.command("hello").get("isWritablePrimary"),
-            timeout=60,
-            description="the replica set to elect a primary",
-            ignore=(PyMongoError,),
-        )
+        host, port = container.get_container_host_ip(), int(container.get_exposed_port(27017))
+        # Talk to this one node directly: the replica set's member address
+        # (localhost:27017 inside the container) isn't reachable from the host.
+        with MongoClient(host, port, directConnection=True) as bootstrap:
+            bootstrap.admin.command(
+                "replSetInitiate", {"_id": "rs0", "members": [{"_id": 0, "host": "localhost:27017"}]}
+            )
+            # Electing itself primary takes a moment; that wait is inherent, so poll.
+            wait_until(
+                lambda: bootstrap.admin.command("hello").get("isWritablePrimary"),
+                timeout=60,
+                description="the replica set to elect a primary",
+                ignore=(PyMongoError,),
+            )
+        # A new client: the bootstrap one first saw a standalone server, and decided
+        # sessions (and so transactions) weren't supported.
+        client: MongoClient[dict[str, Any]] = MongoClient(host, port, directConnection=True, tz_aware=True)
         yield client
         client.close()
 

@@ -85,8 +85,9 @@ def some_contacts(db: Database[dict[str, Any]]) -> None:
 def test_lookup_by_email_uses_the_unique_index(db: Database[dict[str, Any]]) -> None:
     plan = db.contacts.find({"email": "alice3@example.com"}).explain()["queryPlanner"]["winningPlan"]
 
-    assert "IXSCAN" in plan_values(plan, "stage")
-    assert "COLLSCAN" not in plan_values(plan, "stage")
+    # MongoDB 8 answers an equality match on a unique index with EXPRESS_IXSCAN, a fast
+    # path; older versions show FETCH -> IXSCAN. Either way: an index scan, not COLLSCAN.
+    assert plan_values(plan, "stage") in (["EXPRESS_IXSCAN"], ["FETCH", "IXSCAN"])
     assert plan_values(plan, "indexName") == ["email_unique"]
 
 
