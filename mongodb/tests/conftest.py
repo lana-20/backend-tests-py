@@ -43,7 +43,8 @@ def mongo_client() -> Iterator[MongoClient[dict[str, Any]]]:
         host, port = container.get_container_host_ip(), int(container.get_exposed_port(27017))
         # Talk to this one node directly: the replica set's member address
         # (localhost:27017 inside the container) isn't reachable from the host.
-        with MongoClient(host, port, directConnection=True) as bootstrap:
+        bootstrap: MongoClient[dict[str, Any]] = MongoClient(host, port, directConnection=True)
+        with bootstrap:
             bootstrap.admin.command(
                 "replSetInitiate", {"_id": "rs0", "members": [{"_id": 0, "host": "localhost:27017"}]}
             )
