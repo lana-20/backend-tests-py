@@ -71,6 +71,7 @@ jobs:
           - { id: redis, name: Redis, path: redis_cache }
           - { id: dynamodb, name: DynamoDB Local, path: document_stores/dynamodb }
           - { id: firestore, name: Firestore emulator, path: document_stores/firestore }
+          - { id: ssh, name: Linux over SSH, path: linux_ssh }
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.4.0
@@ -110,9 +111,26 @@ jobs:
           fi
           uv run python -m graphql_api.breaking_changes "$RUNNER_TEMP/base.graphql" graphql_api/schema.graphql
 
+  bats:
+    name: Bash (Bats)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: { node-version: '${{ env.NODE_VERSION }}' }
+      # Bats from npm, pinned to an exact version. The JUnit file goes into
+      # allure-results, which Allure reads alongside the pytest results.
+      - run: npx --yes bats@1.13.0 --report-formatter junit --output allure-results linux_ssh/bats
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: allure-results-bats
+          path: allure-results
+          retention-days: 7
+
   report:
     name: Build the report site
-    needs: [sql, section]
+    needs: [sql, section, bats]
     if: always()
     runs-on: ubuntu-latest
     steps:
