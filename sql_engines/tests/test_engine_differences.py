@@ -176,7 +176,10 @@ def test_identity_columns(sql: SqlTarget, db: sa.Connection) -> None:
     ddl = str(CreateTable(products).compile(dialect=sql.engine.dialect))
     assert IDENTITY_DDL[sql.key] in ddl
 
-    explicit = sa.insert(products).values(id=1000, sku="ID-1", name="Explicit", price_cents=1, stock=1)
+    # Plain SQL, on purpose: see the SQL Server note below.
+    explicit = sa.text(
+        "INSERT INTO products (id, sku, name, price_cents, stock) VALUES (1000, 'ID-1', 'Explicit', 1, 1)"
+    )
     if EXPLICIT_ID_ACCEPTED[sql.key]:
         db.execute(explicit)
         # PostgreSQL caveat: the sequence did not move, so a later generated id can
@@ -185,6 +188,12 @@ def test_identity_columns(sql: SqlTarget, db: sa.Connection) -> None:
         # SQL Server needs SET IDENTITY_INSERT products ON first.
         with pytest.raises(DBAPIError, match="IDENTITY_INSERT"), db.begin_nested():
             db.execute(explicit)
+        # SQLAlchemy hides this: a Core/ORM insert with an explicit id makes the dialect
+        # wrap the statement in SET IDENTITY_INSERT ON/OFF for you. (The first CI run of
+        # this test used sa.insert() and "did not raise", which is how we found out.)
+        db.execute(sa.insert(products).values(id=1000, sku="ID-1", name="Explicit", price_cents=1, stock=1))
+
+    assert db.execute(sa.text("SELECT sku FROM products WHERE id = 1000")).scalar_one() == "ID-1"
 
 
 UPSERT_KEYWORD = {

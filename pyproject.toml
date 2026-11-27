@@ -69,3 +69,8 @@ untyped_calls_exclude = ["allure", "allure_commons"]
 # These packages ship without type hints.
 module = ["boto3.*", "botocore.*", "testcontainers.*", "pymssql.*"]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# strawberry.field(permission_classes=[...]) isn't typed as a decorator.
+module = ["graphql_api.app.schema"]
+disallow_untyped_decorators = false

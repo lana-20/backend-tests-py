@@ -1,0 +1,43 @@
+type Contact {
+  id: ID!
+  name: String!
+  owner: String!
+  email: String
+  messages: [Message!]!
+}
+
+type ContactConnection {
+  edges: [ContactEdge!]!
+  pageInfo: PageInfo!
+}
+
+type ContactEdge {
+  cursor: String!
+  node: Contact!
+}
+
+input CreateContactInput {
+  name: String!
+  email: String!
+}
+
+type Message {
+  id: ID!
+  body: String!
+  contact: Contact!
+}
+
+type Mutation {
+  createContact(input: CreateContactInput!): Contact!
+  sendMessage(contactId: ID!, body: String!): Message!
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  endCursor: String
+}
+
+type Query {
+  contacts(first: Int! = 10, after: String = null): ContactConnection!
+  contact(id: ID!): Contact
+}
