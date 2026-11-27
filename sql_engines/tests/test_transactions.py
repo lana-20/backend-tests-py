@@ -6,8 +6,6 @@ NOWAIT instead, so the test gets an immediate error rather than a timing-depende
 """
 
 import sqlite3
-from collections.abc import Iterator
-from uuid import uuid4
 
 import pytest
 import sqlalchemy as sa
@@ -19,21 +17,6 @@ from sql_engines.app.models import Order, Product
 from sql_engines.app.models import products_table as products
 from sql_engines.app.repository import select_product_for_update
 from sql_engines.tests.conftest import SqlTarget
-
-
-@pytest.fixture
-def committed_sku(sql: SqlTarget) -> Iterator[str]:
-    """A product row that is really committed, so a second connection can see it.
-
-    The rollback fixture can't be used here: its rows are invisible to other
-    connections. A unique SKU keeps this test's row apart from everyone else's.
-    """
-    sku = f"TX-{uuid4().hex[:8]}"
-    with sql.engine.begin() as conn:
-        conn.execute(sa.insert(products).values(sku=sku, name="Lock test", price_cents=100, stock=10))
-    yield sku
-    with sql.engine.begin() as conn:
-        conn.execute(sa.delete(products).where(products.c.sku == sku))
 
 
 def read_stock(conn: sa.Connection, sku: str) -> int:

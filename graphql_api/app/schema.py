@@ -128,6 +128,12 @@ def decode_cursor(cursor: str) -> int:
         raise GraphQLError("Invalid cursor", extensions={"code": "BAD_USER_INPUT"}) from error
 
 
+def signed_in_user(info: Info[Context, None]) -> User:
+    user = info.context.user
+    assert user is not None, "IsAuthenticated runs before every resolver that calls this"
+    return user
+
+
 def bad_input(message: str) -> GraphQLError:
     return GraphQLError(message, extensions={"code": "BAD_USER_INPUT"})
 
@@ -140,7 +146,7 @@ class Query:
         if not 1 <= first <= MAX_PAGE_SIZE:
             # Bounding page size is the simplest complexity limit: no "first: 1000000".
             raise bad_input(f"first must be between 1 and {MAX_PAGE_SIZE}")
-        user: User = info.context.user  # type: ignore[assignment]  # IsAuthenticated ran
+        user = signed_in_user(info)
         query = select(ContactRow).order_by(ContactRow.id).limit(first + 1)
         if not user.is_admin:
             query = query.where(ContactRow.owner == user.name)
@@ -174,7 +180,7 @@ class Mutation:
     def create_contact(self, info: Info[Context, None], input: CreateContactInput) -> Contact:
         if not EMAIL_PATTERN.match(input.email):
             raise bad_input("email is not a valid address")
-        user: User = info.context.user  # type: ignore[assignment]
+        user = signed_in_user(info)
         row = ContactRow(owner=user.name, name=input.name, email=input.email)
         info.context.session.add(row)
         info.context.session.commit()
@@ -182,7 +188,7 @@ class Mutation:
 
     @strawberry.mutation(permission_classes=[IsAuthenticated])
     def send_message(self, info: Info[Context, None], contact_id: strawberry.ID, body: str) -> Message:
-        user: User = info.context.user  # type: ignore[assignment]
+        user = signed_in_user(info)
         contact = info.context.session.get(ContactRow, int(contact_id))
         if contact is None or (contact.owner != user.name and not user.is_admin):
             # Same answer for "missing" and "not yours": don't confirm that an id exists.

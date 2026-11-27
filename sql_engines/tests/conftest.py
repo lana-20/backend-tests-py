@@ -7,6 +7,7 @@
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
+from uuid import uuid4
 
 import allure
 import pytest
@@ -15,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from sql_engines.app.database import upgrade
 from sql_engines.app.models import Order, Product
+from sql_engines.app.models import products_table as products
 from sql_engines.tests.servers import ENGINES, DatabaseServer, start_server
 
 
@@ -69,6 +71,21 @@ def session(db: sa.Connection) -> Iterator[Session]:
     """An ORM session that joins the rolled-back transaction of `db`."""
     with Session(bind=db, join_transaction_mode="create_savepoint") as orm_session:
         yield orm_session
+
+
+@pytest.fixture
+def committed_sku(sql: SqlTarget) -> Iterator[str]:
+    """A committed product row (stock 10), for tests that use two connections.
+
+    The rolled-back `db` fixture can't serve those tests: its rows are invisible to
+    other connections. A unique SKU keeps this row apart from every other test's.
+    """
+    sku = f"TX-{uuid4().hex[:8]}"
+    with sql.engine.begin() as conn:
+        conn.execute(sa.insert(products).values(sku=sku, name="Lock test", price_cents=100, stock=10))
+    yield sku
+    with sql.engine.begin() as conn:
+        conn.execute(sa.delete(products).where(products.c.sku == sku))
 
 
 # Deterministic sample data: (sku, name, price_cents, stock).

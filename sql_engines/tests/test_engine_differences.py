@@ -6,8 +6,6 @@ feature that doesn't exist elsewhere is a skip with a reason, never a silent pas
 """
 
 import sqlite3
-from collections.abc import Iterator
-from uuid import uuid4
 
 import pytest
 import sqlalchemy as sa
@@ -42,16 +40,6 @@ DEFAULT_ISOLATION = {
 def test_default_isolation_level(sql: SqlTarget, db: sa.Connection) -> None:
     query, expected = DEFAULT_ISOLATION[sql.key]
     assert db.exec_driver_sql(query).scalar_one() == expected
-
-
-@pytest.fixture
-def committed_sku(sql: SqlTarget) -> Iterator[str]:
-    sku = f"ISO-{uuid4().hex[:8]}"
-    with sql.engine.begin() as conn:
-        insert_product(conn, sku)
-    yield sku
-    with sql.engine.begin() as conn:
-        conn.execute(sa.delete(products).where(products.c.sku == sku))
 
 
 def read_stock_without_waiting(sql: SqlTarget, reader: sa.Connection, sku: str) -> str:
