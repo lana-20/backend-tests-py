@@ -1,0 +1,71 @@
+[project]
+name = "backend-tests-py"
+version = "0.1.0"
+description = "Backend and data-store tests in Python: GraphQL, SQL on four engines, MongoDB, DynamoDB, Firestore, Redis, and Linux over SSH."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "alembic==1.20.1",
+    "boto3==1.44.12",
+    "cryptography==50.0.2",
+    "fastapi==0.165.0",
+    "google-cloud-firestore==2.34.1",
+    "paramiko==5.1.0",
+    "psycopg[binary]==3.3.9",
+    "pymongo==4.20.2",
+    "pymssql==2.4.6",
+    "pymysql==1.2.4",
+    "redis==8.2.0",
+    "requests==2.34.2",
+    "sqlalchemy==2.1.9",
+    "strawberry-graphql==0.341.3",
+    "uvicorn==0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "allure-pytest==2.16.2",
+    "mypy==2.4.1",
+    "pytest==9.2.0",
+    "ruff==0.17.6",
+    "testcontainers==4.15.0",
+    "types-paramiko==5.1.0.20261125",
+    "types-requests==2.33.0.20261030",
+]
+
+[tool.uv]
+# This repo is a test suite, not a library: nothing to build or publish.
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["sql_engines", "graphql_api", "mongodb", "document_stores", "redis_cache", "linux_ssh"]
+addopts = ["--strict-markers", "--alluredir=allure-results", "--clean-alluredir"]
+markers = [
+    "sqlite: SQL suite on SQLite (no Docker needed)",
+    "postgres: SQL suite on PostgreSQL",
+    "mysql: SQL suite on MySQL",
+    "mssql: SQL suite on Microsoft SQL Server",
+]
+filterwarnings = ["error"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "PT", "RUF"]
+# RUF012 flags SQLAlchemy's class-level __mapper_args__ / __table_args__ idiom.
+ignore = ["RUF012"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy", "strawberry.ext.mypy_plugin"]
+exclude = ["\\.venv"]
+# allure-pytest has no type hints; calling it from typed code is fine.
+untyped_calls_exclude = ["allure", "allure_commons"]
+
+[[tool.mypy.overrides]]
+# These packages ship without type hints.
+module = ["boto3.*", "botocore.*", "testcontainers.*", "pymssql.*"]
+ignore_missing_imports = true

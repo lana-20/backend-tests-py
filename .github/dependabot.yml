@@ -1,0 +1,21 @@
+version: 2
+updates:
+  # Python packages, from pyproject.toml and uv.lock.
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+    # One PR for routine dev-tool bumps instead of a dozen.
+    groups:
+      dev-tools:
+        dependency-type: development
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  # Base image of the Linux box used by the SSH tests.
+  - package-ecosystem: docker
+    directory: /linux_ssh/box
+    schedule:
+      interval: weekly
