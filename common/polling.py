@@ -10,7 +10,7 @@ from collections.abc import Callable
 
 
 def wait_until[T](
-    check: Callable[[], T],
+    check: Callable[[], T | None],
     *,
     timeout: float,
     description: str,

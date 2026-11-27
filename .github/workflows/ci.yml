@@ -58,19 +58,26 @@ jobs:
           path: allure-results
           retention-days: 7
 
-  graphql:
-    name: GraphQL
+  # One job per section. Each starts its own containers through testcontainers.
+  section:
+    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { id: graphql, name: GraphQL, path: graphql_api }
+          - { id: mongodb, name: MongoDB, path: mongodb }
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.4.0
         with: { version: '${{ env.UV_VERSION }}', enable-cache: true }
       - run: uv sync --locked
-      - run: uv run pytest graphql_api
+      - run: uv run pytest ${{ matrix.path }}
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: allure-results-graphql
+          name: allure-results-${{ matrix.id }}
           path: allure-results
           retention-days: 7
 
@@ -86,7 +93,7 @@ jobs:
       - run: uv sync --locked
       # First prove the gate can fail: deliberately broken schemas must be rejected.
       - name: Self-test the gate
-        run: uv run pytest graphql_api/tests/test_breaking_changes.py -p no:allure_pytest
+        run: uv run pytest graphql_api/tests/test_breaking_changes.py
       - name: Compare the schema with the base branch
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
@@ -102,7 +109,7 @@ jobs:
 
   report:
     name: Build the report site
-    needs: [sql, graphql]
+    needs: [sql, section]
     if: always()
     runs-on: ubuntu-latest
     steps:
