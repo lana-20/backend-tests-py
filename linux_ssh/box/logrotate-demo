@@ -1,0 +1,12 @@
+/var/log/demo/*.log {
+    daily
+    rotate 7
+    compress
+    delaycompress
+    missingok
+    notifempty
+    # The service keeps its log file open, so copy and truncate instead of moving it.
+    copytruncate
+    # Rotate as the log's owner, not as root.
+    su app adm
+}

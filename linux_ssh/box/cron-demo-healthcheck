@@ -1,0 +1,3 @@
+# Every 5 minutes, as the app user: check the service and keep a log of the result.
+# m   h  dom mon dow user command
+*/5   *  *   *   *   app  /usr/local/bin/healthcheck.sh http://localhost:8080/health 3 5 >> /var/log/demo/healthcheck.log 2>&1

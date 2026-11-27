@@ -1,0 +1,3 @@
+# tester may send signals to processes owned by `app` (to test supervised restarts),
+# and run nothing else with elevated rights. No password prompt: there is no password.
+tester ALL=(app) NOPASSWD: /usr/bin/kill
